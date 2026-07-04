@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Leggi per me</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#7BAF7B">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0D0D0D;
+    --surface: #1A1A1A;
+    --text: #F0EDE8;
+    --muted: #888880;
+    --accent: #7BAF7B;
+    --accent-dim: #4A7A4A;
+    --danger: #C0614A;
+    --radius: 18px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Atkinson Hyperlegible', sans-serif;
+    font-size: 22px;
+    line-height: 1.5;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    gap: 20px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: -0.3px;
+  }
+
+  /* ---- API KEY screen ---- */
+  #setup-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  #setup-screen label {
+    font-size: 20px;
+    color: var(--muted);
+  }
+
+  #api-key-input {
+    background: var(--surface);
+    border: 2px solid var(--accent-dim);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 20px;
+    padding: 18px 16px;
+    width: 100%;
+    outline: none;
+  }
+
+  #api-key-input:focus {
+    border-color: var(--accent);
+  }
+
+  /* ---- Main screen ---- */
+  #main-screen { display: none; flex-direction: column; gap: 20px; flex: 1; }
+
+  /* ---- Big action buttons ---- */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 88px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn:disabled { opacity: 0.35; pointer-events: none; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0D0D0D;
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 2px solid #333;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  .btn-small {
+    min-height: 64px;
+    font-size: 20px;
+  }
+
+  /* ---- Status area ---- */
+  #status {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 20px;
+    color: var(--muted);
+    text-align: center;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #status.active { color: var(--text); }
+  #status.error { color: var(--danger); }
+
+  /* ---- Wave animation ---- */
+  #wave-container {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 56px;
+  }
+
+  #wave-container.visible { display: flex; }
+
+  .wave-bar {
+    width: 7px;
+    border-radius: 4px;
+    background: var(--accent);
+    animation: wave 1s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { height: 16px; animation-delay: 0s; }
+  .wave-bar:nth-child(2) { height: 32px; animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { height: 48px; animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { height: 36px; animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { height: 24px; animation-delay: 0.4s; }
+  .wave-bar:nth-child(6) { height: 40px; animation-delay: 0.15s; }
+  .wave-bar:nth-child(7) { height: 20px; animation-delay: 0.35s; }
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
+    50% { transform: scaleY(1.0); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wave-bar { animation: none; }
+  }
+
+  /* ---- Text area (extracted) ---- */
+  #text-display {
+    display: none;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    font-size: 20px;
+    line-height: 1.6;
+    max-height: 220px;
+    overflow-y: auto;
+    color: var(--text);
+  }
+
+  /* ---- Mic button ---- */
+  #mic-btn {
+    display: none;
+  }
+
+  #mic-btn.visible {
+    display: flex;
+  }
+
+  #mic-btn.listening {
+    background: var(--danger);
+    color: #fff;
+  }
+
+  /* ---- Hidden file input ---- */
+  #file-input { display: none; }
+
+  /* ---- Spacer ---- */
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <h1>Leggi per me</h1>
+  <label for="api-key-input">Inserisci la chiave API per iniziare</label>
+  <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" autocorrect="off" spellcheck="false">
+  <button class="btn btn-primary" onclick="saveKey()">Continua</button>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="main-screen">
+  <h1>Leggi per me</h1>
+
+  <div id="status">Premi il bottone per fotografare un documento.</div>
+
+  <div id="wave-container">
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+    <div class="wave-bar"></div>
+  </div>
+
+  <div id="text-display"></div>
+
+  <input type="file" id="file-input" accept="image/*" capture="environment">
+
+  <button class="btn btn-primary" id="photo-btn" onclick="triggerPhoto()">
+    📷 Fotografa documento
+  </button>
+
+  <button class="btn btn-secondary btn-small" id="stop-btn" style="display:none" onclick="stopReading()">
+    ⏹ Smetti di leggere
+  </button>
+
+  <button class="btn btn-secondary btn-small" id="repeat-btn" style="display:none" onclick="repeatReading()">
+    🔁 Ripeti
+  </button>
+
+  <button class="btn btn-secondary btn-small visible" id="mic-btn" style="display:none" onclick="toggleMic()">
+    🎤 Fai una domanda
+  </button>
+
+  <div class="spacer"></div>
+
+  <button class="btn btn-secondary btn-small" onclick="changeKey()">Cambia chiave API</button>
+</div>
+
+<script>
+// ---- State ----
+let apiKey = '';
+let extractedText = '';
+let conversationHistory = [];
+let currentUtterance = null;
+let recognition = null;
+let isListening = false;
+
+// ---- Init ----
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('lgm_api_key');
+  if (saved) {
+    apiKey = saved;
+    showMain();
+  }
+});
+
+// ---- Key management ----
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-ant-')) {
+    setStatus('La chiave non sembra corretta. Deve iniziare con sk-ant-', 'error');
+    return;
+  }
+  apiKey = val;
+  localStorage.setItem('lgm_api_key', apiKey);
+  showMain();
+}
+
+function changeKey() {
+  localStorage.removeItem('lgm_api_key');
+  apiKey = '';
+  document.getElementById('main-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+}
+
+function showMain() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-screen').style.display = 'flex';
+}
+
+// ---- Photo ----
+function triggerPhoto() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  await processImage(file);
+});
+
+async function processImage(file) {
+  setStatus('Sto leggendo il documento...', 'active');
+  hideControls();
+  showWave(false);
+
+  const base64 = await fileToBase64(file);
+  const mediaType = file.type || 'image/jpeg';
+
+  conversationHistory = [];
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: `Sei un assistente per una persona anziana con problemi di vista. 
+Il tuo unico compito è leggere documenti ad alta voce con chiarezza.
+Quando ricevi un'immagine: trascrivi tutto il testo che vedi, esattamente come appare, senza commenti, senza introduzioni, senza "Ecco il testo:" o simili. Solo il testo del documento.
+Quando ricevi una domanda: rispondi in modo chiaro, semplice e conciso in italiano. Frasi brevi. Niente tecnicismi.`,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'base64', media_type: mediaType, data: base64 }
+              },
+              { type: 'text', text: 'Leggi questo documento.' }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Errore API');
+    }
+
+    const data = await response.json();
+    extractedText = data.content.find(b => b.type === 'text')?.text || '';
+
+    conversationHistory = [
+      {
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: 'Leggi questo documento.' }
+        ]
+      },
+      { role: 'assistant', content: extractedText }
+    ];
+
+    showTextDisplay(extractedText);
+    speak(extractedText, () => {
+      setStatus('Lettura terminata.', 'active');
+      showWave(false);
+      showPostReadControls();
+    });
+
+  } catch (err) {
+    setStatus('Errore: ' + err.message, 'error');
+    showWave(false);
+    showPhotoBtn();
+  }
+}
+
+// ---- Speech synthesis ----
+function speak(text, onEnd) {
+  window.speechSynthesis.cancel();
+  currentUtterance = new SpeechSynthesisUtterance(text);
+  currentUtterance.lang = 'it-IT';
+  currentUtterance.rate = 0.92;
+  currentUtterance.pitch = 1.0;
+  currentUtterance.volume = 1.0;
+
+  setStatus('Sto leggendo...', 'active');
+  showWave(true);
+  showStopBtn();
+
+  currentUtterance.onend = () => {
+    showWave(false);
+    if (onEnd) onEnd();
+  };
+
+  currentUtterance.onerror = (e) => {
+    if (e.error === 'interrupted') return;
+    showWave(false);
+    setStatus('Errore nella lettura vocale.', 'error');
+    showPostReadControls();
+  };
+
+  window.speechSynthesis.speak(currentUtterance);
+}
+
+function stopReading() {
+  window.speechSynthesis.cancel();
+  showWave(false);
+  setStatus('Lettura interrotta.', 'active');
+  showPostReadControls();
+}
+
+function repeatReading() {
+  if (!extractedText) return;
+  speak(extractedText, () => {
+    setStatus('Lettura terminata.', 'active');
+    showWave(false);
+    showPostReadControls();
+  });
+}
+
+// ---- Voice recognition ----
+function toggleMic() {
+  if (isListening) {
+    stopMic();
+  } else {
+    startMic();
+  }
+}
+
+function startMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setStatus('Il tuo dispositivo non supporta il riconoscimento vocale. Scrivi la domanda.', 'error');
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  showWave(false);
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'it-IT';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening = true;
+    setStatus('Sto ascoltando... parla pure.', 'active');
+    document.getElementById('mic-btn').classList.add('listening');
+    document.getElementById('mic-btn').textContent = '🔴 Sto ascoltando...';
+  };
+
+  recognition.onresult = (e) => {
+    const question = e.results[0][0].transcript;
+    isListening = false;
+    document.getElementById('mic-btn').classList.remove('listening');
+    document.getElementById('mic-btn').textContent = '🎤 Fai una domanda';
+    askQuestion(question);
+  };
+
+  recognition.onerror = (e) => {
+    isListening = false;
+    document.getElementById('mic-btn').classList.remove('listening');
+    document.getElementById('mic-btn').textContent = '🎤 Fai una domanda';
+    if (e.error === 'no-speech') {
+      setStatus('Non ho sentito nulla. Riprova.', 'active');
+    } else {
+      setStatus('Problema con il microfono: ' + e.error, 'error');
+    }
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('mic-btn').classList.remove('listening');
+    document.getElementById('mic-btn').textContent = '🎤 Fai una domanda';
+  };
+
+  recognition.start();
+}
+
+function stopMic() {
+  if (recognition) recognition.stop();
+  isListening = false;
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('mic-btn').textContent = '🎤 Fai una domanda';
+}
+
+async function askQuestion(question) {
+  setStatus('Domanda: "' + question + '"', 'active');
+  showWave(true);
+  hidePostReadControls();
+
+  conversationHistory.push({ role: 'user', content: question });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 512,
+        system: `Sei un assistente per una persona anziana con problemi di vista. 
+Rispondi in modo chiaro, semplice e conciso in italiano. Frasi brevi. Niente tecnicismi. 
+Hai già letto il documento fotografato. Rispondi alle domande dell'utente su quel documento.`,
+        messages: conversationHistory
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Errore API');
+    }
+
+    const data = await response.json();
+    const answer = data.content.find(b => b.type === 'text')?.text || '';
+
+    conversationHistory.push({ role: 'assistant', content: answer });
+
+    speak(answer, () => {
+      setStatus('Risposta terminata.', 'active');
+      showWave(false);
+      showPostReadControls();
+    });
+
+  } catch (err) {
+    showWave(false);
+    setStatus('Errore: ' + err.message, 'error');
+    showPostReadControls();
+  }
+}
+
+// ---- UI helpers ----
+function setStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type || '';
+}
+
+function showWave(on) {
+  document.getElementById('wave-container').classList.toggle('visible', on);
+}
+
+function showTextDisplay(text) {
+  const el = document.getElementById('text-display');
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+function hideControls() {
+  document.getElementById('photo-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('repeat-btn').style.display = 'none';
+  document.getElementById('mic-btn').style.display = 'none';
+  document.getElementById('text-display').style.display = 'none';
+}
+
+function showPhotoBtn() {
+  document.getElementById('photo-btn').style.display = 'flex';
+}
+
+function showStopBtn() {
+  document.getElementById('stop-btn').style.display = 'flex';
+  document.getElementById('photo-btn').style.display = 'none';
+  document.getElementById('repeat-btn').style.display = 'none';
+  document.getElementById('mic-btn').style.display = 'none';
+}
+
+function showPostReadControls() {
+  document.getElementById('photo-btn').style.display = 'flex';
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('repeat-btn').style.display = 'flex';
+  document.getElementById('mic-btn').style.display = 'flex';
+}
+
+function hidePostReadControls() {
+  document.getElementById('repeat-btn').style.display = 'none';
+  document.getElementById('mic-btn').style.display = 'none';
+  document.getElementById('photo-btn').style.display = 'none';
+  document.getElementById('stop-btn').style.display = 'flex';
+}
+
+// ---- Utils ----
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
