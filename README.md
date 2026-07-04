@@ -1,7 +1,7 @@
 # Leggi per me / Read It to Me
 
 > Un'app web per persone ipovedenti: fotografa un documento e ascoltalo ad alta voce.
-> A web app for people with low vision: photograph a document and have it read aloud.
+> A web app for people with low vision: photograph a document and have it read aloud. 
 
 ---
 
@@ -147,6 +147,6 @@ If the key expires or you want to change it, there is a **"Cambia chiave API" (C
 
 ## Licenza / License
 
-MIT — libero uso, modifica e distribuzione. Vedi [LICENSE](LICENSE).
+MIT — libero uso, modifica e distribuzione. Vedi [LICENSE](LICENSE).  
 
 MIT — free to use, modify, and distribute. See [LICENSE](LICENSE).
