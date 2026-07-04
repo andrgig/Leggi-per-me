@@ -2,7 +2,7 @@
   "name": "Leggi per me",
   "short_name": "Leggi per me",
   "description": "Fotografa un documento e ascoltalo ad alta voce",
-  "start_url": "/index.html",
+  "start_url": "/Leggi-per-me/index.html",
   "display": "standalone",
   "background_color": "#0D0D0D",
   "theme_color": "#7BAF7B",
